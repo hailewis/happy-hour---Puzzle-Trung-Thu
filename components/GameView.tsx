@@ -71,11 +71,13 @@ const GameView: React.FC<GameViewProps> = ({ gameConfig }) => {
   // Effect to save progress to localStorage whenever it changes
   useEffect(() => {
     try {
-      localStorage.setItem(`puzzle-progress-${gameConfig.id}`, JSON.stringify(answeredMask));
+      if (!isFinalGuessed) {
+        localStorage.setItem(`puzzle-progress-${gameConfig.id}`, JSON.stringify(answeredMask));
+      }
     } catch (error) {
       console.error("Failed to save progress to localStorage:", error);
     }
-  }, [answeredMask, gameConfig.id]);
+  }, [answeredMask, gameConfig.id, isFinalGuessed]);
 
   // Effect to load progress and reset game state when the puzzle (gameConfig.id) changes
   useEffect(() => {
@@ -166,6 +168,7 @@ const GameView: React.FC<GameViewProps> = ({ gameConfig }) => {
 
     if (isNameCorrect) {
       setIsFinalGuessed(true);
+      localStorage.removeItem(`puzzle-progress-${gameConfig.id}`);
       setNotification({
         title: "Chúc Mừng, Bạn Đã Thắng!",
         message: `Đáp án chính xác là: ${gameConfig.targetName}. Ý nghĩa: ${gameConfig.targetMeaning}`,
@@ -195,6 +198,24 @@ const GameView: React.FC<GameViewProps> = ({ gameConfig }) => {
       setNotification({ title: "Chưa Đúng Lắm!", message: "Tên của bức hình không chính xác. Hãy nhìn kỹ và thử lại!" });
     }
   };
+
+  const handleReset = () => {
+    const initialMask = Array(gameConfig.questions.length).fill(false);
+    setAnsweredMask(initialMask);
+
+    try {
+      localStorage.removeItem(`puzzle-progress-${gameConfig.id}`);
+    } catch (error) {
+      console.error("Failed to clear progress from localStorage:", error);
+    }
+
+    setIsFinalGuessed(false);
+    setFinalGuess({ name: '', meaning: '' });
+    setNotification(null);
+    setCurrentQuestionIndex(null);
+    setLastCorrectAnswerIndex(null);
+  };
+
 
   return (
     <div className="flex flex-col items-center animate-fade-in">
@@ -227,42 +248,51 @@ const GameView: React.FC<GameViewProps> = ({ gameConfig }) => {
       />
       
       <div className="mt-6">
-        <button onClick={handleNextQuestion} className="px-6 py-2 bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold rounded-lg shadow-md transition duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed" disabled={allPiecesSolved}>
+        <button onClick={handleNextQuestion} className="px-6 py-2 bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold rounded-lg shadow-md transition duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed" disabled={allPiecesSolved || isFinalGuessed}>
             Câu Chưa Giải Tiếp Theo
         </button>
       </div>
 
-      <div className={`w-full max-w-lg mt-8 p-6 bg-gray-800 rounded-xl shadow-xl transition-opacity duration-500 ${!canMakeFinalGuess || isFinalGuessed ? 'opacity-50 pointer-events-none' : ''}`}>
-        <p className="text-center text-blue-300 italic mb-4">
-          Gợi ý: "{gameConfig.targetTheme}"
-        </p>
-        <h2 className="text-xl font-bold text-yellow-300 mb-4 border-b border-yellow-400 pb-2">Đoán Lần Cuối</h2>
-        
-        <label htmlFor="name-guess" className="block text-sm font-medium text-gray-300 mb-1">Tên Bức Hình:</label>
-        <input
-          type="text"
-          id="name-guess"
-          value={finalGuess.name}
-          onChange={(e) => setFinalGuess(prev => ({ ...prev, name: e.target.value }))}
-          className="w-full p-2 bg-gray-900 border border-gray-600 rounded-md focus:ring-indigo-500 focus:border-indigo-500 mb-4"
-          placeholder="Nhập tên tại đây..."
-          disabled={!canMakeFinalGuess || isFinalGuessed}
-        />
-        
-        <button
-          onClick={handleFinalGuess}
-          className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={!canMakeFinalGuess || isFinalGuessed}
-        >
-          Gửi Đáp Án Cuối Cùng
-        </button>
-        {isFinalGuessed && (
-            <div className="mt-4 p-4 bg-green-900 border border-green-700 rounded-lg">
-                <p className="font-bold text-green-300">TÊN BỨC HÌNH: {gameConfig.targetName}</p>
-                <p className="text-sm text-green-400 mt-1">Ý NGHĨA: {gameConfig.targetMeaning}</p>
-            </div>
-        )}
-      </div>
+      {!isFinalGuessed && (
+        <div className={`w-full max-w-lg mt-8 p-6 bg-gray-800 rounded-xl shadow-xl transition-opacity duration-500 ${!canMakeFinalGuess ? 'opacity-50 pointer-events-none' : ''}`}>
+          <p className="text-center text-blue-300 italic mb-4">
+            Gợi ý: "{gameConfig.targetTheme}"
+          </p>
+          <h2 className="text-xl font-bold text-yellow-300 mb-4 border-b border-yellow-400 pb-2">Đoán Lần Cuối</h2>
+          
+          <label htmlFor="name-guess" className="block text-sm font-medium text-gray-300 mb-1">Tên Bức Hình:</label>
+          <input
+            type="text"
+            id="name-guess"
+            value={finalGuess.name}
+            onChange={(e) => setFinalGuess(prev => ({ ...prev, name: e.target.value }))}
+            className="w-full p-2 bg-gray-900 border border-gray-600 rounded-md focus:ring-indigo-500 focus:border-indigo-500 mb-4"
+            placeholder="Nhập tên tại đây..."
+            disabled={!canMakeFinalGuess}
+          />
+          
+          <button
+            onClick={handleFinalGuess}
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!canMakeFinalGuess}
+          >
+            Gửi Đáp Án Cuối Cùng
+          </button>
+        </div>
+      )}
+
+      {isFinalGuessed && (
+          <div className="w-full max-w-lg mt-8 p-6 bg-green-900 border border-green-700 rounded-lg animate-fade-in">
+              <p className="font-bold text-green-300">TÊN BỨC HÌNH: {gameConfig.targetName}</p>
+              <p className="text-sm text-green-400 mt-1">Ý NGHĨA: {gameConfig.targetMeaning}</p>
+              <button
+                  onClick={handleReset}
+                  className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300"
+              >
+                  Chơi Lại Câu Đố Này
+              </button>
+          </div>
+      )}
     </div>
   );
 };
