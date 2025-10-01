@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AdminView from './components/AdminView';
 import GameView from './components/GameView';
 import { GameConfig, CompletedPuzzle } from './types';
-import { DEFAULT_GAME_CONFIGS, APP_BACKGROUND_IMAGES } from './constants';
+import { DEFAULT_GAME_CONFIGS, APP_BACKGROUND_IMAGES, DEFAULT_BACKGROUND_IMAGE } from './constants';
 import { ChevronLeftIcon, ChevronRightIcon } from './components/icons';
 
 type View = 'GAME' | 'ADMIN';
@@ -99,7 +99,7 @@ const App: React.FC = () => {
   const [view, setView] = useState<View>('GAME');
   const [gameConfigs, setGameConfigs] = useState<GameConfig[]>(DEFAULT_GAME_CONFIGS);
   const [currentPuzzleIndex, setCurrentPuzzleIndex] = useState(0);
-  const [currentBackground, setCurrentBackground] = useState(() => getRandomItem(APP_BACKGROUND_IMAGES));
+  const [currentBackground, setCurrentBackground] = useState(DEFAULT_BACKGROUND_IMAGE);
   const [showHistory, setShowHistory] = useState(false);
 
   const handleConfigSave = (updatedConfigs: GameConfig[]) => {

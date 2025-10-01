@@ -1,5 +1,7 @@
 import { GameConfig } from './types';
 
+export const DEFAULT_BACKGROUND_IMAGE = 'https://booking.muongthanh.com/upload_images/images/H%60/nguon-goc-tet-trung-thu.jpg';
+
 export const APP_BACKGROUND_IMAGES = [
   'https://cdn2.fptshop.com.vn/unsafe/1920x0/filters:format(webp):quality(75)/trung_thu_nam_2025_vao_ngay_nao_1_f8074057fa.jpg',
   'https://hoangthanhthanglong.vn/wp-content/uploads/2023/05/linhlichtrangram.jpeg',
