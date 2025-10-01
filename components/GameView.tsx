@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { GameConfig, Notification } from '../types';
+
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { GameConfig, Notification, CompletedPuzzle } from '../types';
 import PuzzleGrid from './PuzzleGrid';
 import QuestionModal from './QuestionModal';
 import NotificationModal from './NotificationModal';
@@ -14,24 +15,104 @@ const normalizeAnswer = (input: string): string => {
 };
 
 const GameView: React.FC<GameViewProps> = ({ gameConfig }) => {
-  const [answeredMask, setAnsweredMask] = useState<boolean[]>(Array(gameConfig.questions.length).fill(false));
+  const [answeredMask, setAnsweredMask] = useState<boolean[]>(() => {
+    try {
+      const savedProgress = localStorage.getItem(`puzzle-progress-${gameConfig.id}`);
+      if (savedProgress) {
+        const parsedMask = JSON.parse(savedProgress);
+        if (Array.isArray(parsedMask) && parsedMask.length === gameConfig.questions.length) {
+          return parsedMask;
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load progress from localStorage:", error);
+    }
+    return Array(gameConfig.questions.length).fill(false);
+  });
+  
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number | null>(null);
   const [notification, setNotification] = useState<Notification | null>(null);
   const [isFinalGuessed, setIsFinalGuessed] = useState(false);
   const [finalGuess, setFinalGuess] = useState({ name: '', meaning: '' });
+  const [lastCorrectAnswerIndex, setLastCorrectAnswerIndex] = useState<number | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const answeredCount = useMemo(() => answeredMask.filter(Boolean).length, [answeredMask]);
   const allPiecesSolved = useMemo(() => answeredCount === gameConfig.questions.length, [answeredCount, gameConfig.questions.length]);
   const canMakeFinalGuess = useMemo(() => answeredCount >= 3, [answeredCount]);
-
+  
+  // Effect to manage background ambient sound
   useEffect(() => {
-    // This effect now correctly resets the game state when gameConfig.id changes
-    setAnsweredMask(Array(gameConfig.questions.length).fill(false));
+    // Using a ref to persist the audio object across renders without re-creating it
+    if (!audioRef.current) {
+        audioRef.current = new Audio('https://cdn.pixabay.com/audio/2022/10/10/audio_b28d548f47.mp3');
+        audioRef.current.loop = true;
+        audioRef.current.volume = 0.2; // Set a soft volume
+    }
+    
+    // Play the audio, handling potential browser restrictions
+    const playPromise = audioRef.current.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(error => {
+        console.log("Audio autoplay was prevented by the browser:", error);
+        // User interaction will be needed to start audio in some browsers.
+      });
+    }
+
+    // Cleanup function to run when the component unmounts
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
+  }, []); // Empty dependency array ensures this runs only on mount and unmount
+
+
+  // Effect to save progress to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(`puzzle-progress-${gameConfig.id}`, JSON.stringify(answeredMask));
+    } catch (error) {
+      console.error("Failed to save progress to localStorage:", error);
+    }
+  }, [answeredMask, gameConfig.id]);
+
+  // Effect to load progress and reset game state when the puzzle (gameConfig.id) changes
+  useEffect(() => {
+    try {
+      const savedProgress = localStorage.getItem(`puzzle-progress-${gameConfig.id}`);
+      if (savedProgress) {
+        const parsedMask = JSON.parse(savedProgress);
+        if (Array.isArray(parsedMask) && parsedMask.length === gameConfig.questions.length) {
+          setAnsweredMask(parsedMask);
+        } else {
+          setAnsweredMask(Array(gameConfig.questions.length).fill(false));
+        }
+      } else {
+        setAnsweredMask(Array(gameConfig.questions.length).fill(false));
+      }
+    } catch (error) {
+      console.error("Failed to load progress on puzzle change:", error);
+      setAnsweredMask(Array(gameConfig.questions.length).fill(false));
+    }
+
+    // Reset other game state
     setCurrentQuestionIndex(null);
     setNotification(null);
     setIsFinalGuessed(false);
     setFinalGuess({ name: '', meaning: '' });
+    setLastCorrectAnswerIndex(null);
   }, [gameConfig.id, gameConfig.questions.length]);
+
+
+  useEffect(() => {
+    if (lastCorrectAnswerIndex !== null) {
+      const timer = setTimeout(() => {
+        setLastCorrectAnswerIndex(null);
+      }, 700); // Duration should match the animation in index.html
+      return () => clearTimeout(timer);
+    }
+  }, [lastCorrectAnswerIndex]);
 
   const handlePieceClick = (index: number) => {
     if (answeredMask[index] || isFinalGuessed) return;
@@ -55,6 +136,15 @@ const GameView: React.FC<GameViewProps> = ({ gameConfig }) => {
     const isCorrect = question.a.some(correctAnswer => normalizeAnswer(correctAnswer) === normalizedUserAnswer);
 
     if (isCorrect) {
+      try {
+        const correctSound = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_2b28b1eb7d.mp3');
+        correctSound.volume = 0.5;
+        correctSound.play().catch(e => console.error("Error playing sound:", e));
+      } catch (error) {
+          console.error("Could not play audio:", error);
+      }
+
+      setLastCorrectAnswerIndex(currentQuestionIndex);
       setAnsweredMask(prev => {
         const newMask = [...prev];
         newMask[currentQuestionIndex] = true;
@@ -80,6 +170,27 @@ const GameView: React.FC<GameViewProps> = ({ gameConfig }) => {
         title: "Chúc Mừng, Bạn Đã Thắng!",
         message: `Đáp án chính xác là: ${gameConfig.targetName}. Ý nghĩa: ${gameConfig.targetMeaning}`,
       });
+      
+      // Save to history on correct final guess
+      try {
+        const savedHistory = localStorage.getItem('puzzle-history');
+        const history: CompletedPuzzle[] = savedHistory ? JSON.parse(savedHistory) : [];
+        
+        const isAlreadyCompleted = history.some(p => p.id === gameConfig.id);
+        
+        if (!isAlreadyCompleted) {
+          const newHistoryEntry: CompletedPuzzle = {
+            id: gameConfig.id,
+            name: gameConfig.targetName,
+            completedAt: new Date().toISOString(),
+          };
+          const updatedHistory = [...history, newHistoryEntry];
+          localStorage.setItem('puzzle-history', JSON.stringify(updatedHistory));
+        }
+      } catch (error) {
+        console.error("Failed to save to puzzle history:", error);
+      }
+
     } else {
       setNotification({ title: "Chưa Đúng Lắm!", message: "Tên của bức hình không chính xác. Hãy nhìn kỹ và thử lại!" });
     }
@@ -112,6 +223,7 @@ const GameView: React.FC<GameViewProps> = ({ gameConfig }) => {
         targetImage={gameConfig.targetImage}
         answeredMask={answeredMask}
         onPieceClick={handlePieceClick}
+        lastCorrectAnswerIndex={lastCorrectAnswerIndex}
       />
       
       <div className="mt-6">

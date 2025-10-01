@@ -17,3 +17,9 @@ export interface Notification {
   title: string;
   message: string;
 }
+
+export interface CompletedPuzzle {
+  id: string;
+  name: string;
+  completedAt: string; // ISO date string
+}

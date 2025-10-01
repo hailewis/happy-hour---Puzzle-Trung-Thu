@@ -12,6 +12,19 @@
       body {
         font-family: 'Inter', sans-serif;
       }
+      @keyframes flash-green {
+        0%, 100% { 
+          box-shadow: 0 0 0px 0px rgba(74, 222, 128, 0); 
+          border-color: rgba(250, 204, 21, 0.3);
+        }
+        50% { 
+          box-shadow: 0 0 25px 8px rgba(74, 222, 128, 0.6); 
+          border-color: rgba(167, 243, 208, 1);
+        }
+      }
+      .animate-flash-green {
+        animation: flash-green 0.7s ease-in-out;
+      }
     </style>
   <script type="importmap">
 {

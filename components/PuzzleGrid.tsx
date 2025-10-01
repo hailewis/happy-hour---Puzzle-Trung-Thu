@@ -6,9 +6,10 @@ interface PuzzleGridProps {
   targetImage: string;
   answeredMask: boolean[];
   onPieceClick: (index: number) => void;
+  lastCorrectAnswerIndex: number | null;
 }
 
-const PuzzleGrid: React.FC<PuzzleGridProps> = ({ targetImage, answeredMask, onPieceClick }) => {
+const PuzzleGrid: React.FC<PuzzleGridProps> = ({ targetImage, answeredMask, onPieceClick, lastCorrectAnswerIndex }) => {
   return (
     <div className="relative w-80 h-80 sm:w-96 sm:h-96 md:w-[480px] md:h-[480px] shadow-2xl rounded-xl overflow-hidden">
       <img
@@ -23,6 +24,7 @@ const PuzzleGrid: React.FC<PuzzleGridProps> = ({ targetImage, answeredMask, onPi
             index={index}
             isAnswered={answeredMask[index]}
             onClick={() => onPieceClick(index)}
+            isCorrectFlash={lastCorrectAnswerIndex === index}
           />
         ))}
       </div>
