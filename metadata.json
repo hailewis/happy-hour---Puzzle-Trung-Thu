@@ -1,0 +1,5 @@
+{
+  "name": "Đoán Puzzle rước Trung thu",
+  "description": "An interactive puzzle game themed around the Mid-Autumn Festival. Players answer trivia questions to reveal a hidden image. Includes an admin panel to customize the game and generate questions using AI.",
+  "requestFramePermissions": []
+}
