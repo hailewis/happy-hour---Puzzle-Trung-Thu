@@ -13,6 +13,7 @@ interface QuestionModalProps {
 const QuestionModal: React.FC<QuestionModalProps> = ({ question, onClose, onSubmit }) => {
   const [answer, setAnswer] = useState('');
   const [showAnswer, setShowAnswer] = useState(false);
+  const [showHint, setShowHint] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -50,6 +51,24 @@ const QuestionModal: React.FC<QuestionModalProps> = ({ question, onClose, onSubm
         </div>
 
         <p className="text-lg text-blue-200 mb-6 min-h-[6rem]">{question.q}</p>
+
+        {/* Hint Section */}
+        {question.hint && (
+            <div className="mb-6">
+                <button
+                    type="button"
+                    onClick={() => setShowHint(!showHint)}
+                    className="text-sm text-yellow-400 hover:text-yellow-300 underline"
+                >
+                    {showHint ? 'Ẩn Gợi Ý' : 'Cần một gợi ý?'}
+                </button>
+                {showHint && (
+                    <div className="mt-2 p-3 bg-gray-700 border border-gray-600 rounded-lg animate-fade-in">
+                        <p className="text-sm text-yellow-200 italic">{question.hint}</p>
+                    </div>
+                )}
+            </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <label htmlFor="answer-input" className="block text-sm font-medium text-gray-300 mb-2">Câu Trả Lời Của Bạn:</label>

@@ -2,6 +2,7 @@ export interface Question {
   id: number | string;
   q: string;
   a: string[];
+  hint?: string;
 }
 
 export interface GameConfig {

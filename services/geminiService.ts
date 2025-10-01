@@ -26,8 +26,12 @@ const generateQuestionsSchema = {
               type: Type.STRING,
             },
           },
+          hint: {
+            type: Type.STRING,
+            description: 'A short, helpful hint for the question, in Vietnamese. The hint should subtly guide towards the answer without giving it away.'
+          }
         },
-        required: ['q', 'a'],
+        required: ['q', 'a', 'hint'],
       },
     },
   },
@@ -37,7 +41,7 @@ const generateQuestionsSchema = {
 export const generateQuestions = async (theme: string): Promise<Omit<Question, 'id'>[]> => {
   // FIX: Removed check for API_KEY as per guidelines.
   try {
-    const prompt = `Generate exactly ${TOTAL_QUESTIONS_PER_PUZZLE} trivia questions about the Vietnamese holiday "${theme}". The questions and answers must be in Vietnamese. For the answers, provide a list of possible correct variations. All answers in the list must be normalized: converted to uppercase, with Vietnamese accents removed (e.g., 'TRUNG THU' instead of 'Trung Thu'). The question text should remain in proper Vietnamese with accents.`;
+    const prompt = `Generate exactly ${TOTAL_QUESTIONS_PER_PUZZLE} trivia questions about the Vietnamese holiday "${theme}". The questions and answers must be in Vietnamese. For each question, also provide a short, helpful hint that subtly guides towards the correct answer without giving it away. For the answers, provide a list of possible correct variations. All answers in the list must be normalized: converted to uppercase, with Vietnamese accents removed (e.g., 'TRUNG THU' instead of 'Trung Thu'). The question text and hint should remain in proper Vietnamese with accents.`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',

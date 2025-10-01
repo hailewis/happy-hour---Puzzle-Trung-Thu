@@ -47,7 +47,7 @@ const AdminView: React.FC<AdminViewProps> = ({ allConfigs, currentConfigIndex, o
     }
   };
 
-  const handleQuestionChange = (index: number, field: 'q' | 'a', value: string) => {
+  const handleQuestionChange = (index: number, field: 'q' | 'a' | 'hint', value: string) => {
     const newQuestions = [...currentConfig.questions];
     if (field === 'a') {
       newQuestions[index] = { ...newQuestions[index], [field]: value.split(',').map(s => s.trim()) };
@@ -66,7 +66,8 @@ const AdminView: React.FC<AdminViewProps> = ({ allConfigs, currentConfigIndex, o
     const newQuestion: Question = {
       id: `q-${Date.now()}`,
       q: 'Câu hỏi mới',
-      a: ['Đáp án mới']
+      a: ['Đáp án mới'],
+      hint: 'Gợi ý mới'
     };
     handleFieldChange('questions', [...currentConfig.questions, newQuestion]);
   }
@@ -94,7 +95,7 @@ const AdminView: React.FC<AdminViewProps> = ({ allConfigs, currentConfigIndex, o
       targetName: 'Tiêu Đề Câu Đố Mới',
       targetMeaning: 'Nhập ý nghĩa của câu đố này.',
       questions: Array.from({ length: TOTAL_QUESTIONS_PER_PUZZLE }, (_, i) => ({
-        id: i, q: `Câu hỏi mới ${i + 1}`, a: ['ĐÁP ÁN']
+        id: i, q: `Câu hỏi mới ${i + 1}`, a: ['ĐÁP ÁN'], hint: 'Gợi ý mới'
       }))
     };
     onSave([...allConfigs, newPuzzle]);
@@ -226,12 +227,20 @@ const AdminView: React.FC<AdminViewProps> = ({ allConfigs, currentConfigIndex, o
                   value={q.q}
                   onChange={(e) => handleQuestionChange(index, 'q', e.target.value)}
                   className="w-full p-2 mb-2 rounded bg-gray-900 border border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  placeholder="Nội dung câu hỏi"
                 />
                 <input
                   type="text"
                   value={q.a.join(', ')}
                   onChange={(e) => handleQuestionChange(index, 'a', e.target.value)}
                   placeholder="Các đáp án, cách nhau bằng dấu phẩy"
+                  className="w-full p-2 mb-2 rounded bg-gray-900 border border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                />
+                 <input
+                  type="text"
+                  value={q.hint || ''}
+                  onChange={(e) => handleQuestionChange(index, 'hint', e.target.value)}
+                  placeholder="Gợi ý cho câu hỏi (tùy chọn)"
                   className="w-full p-2 rounded bg-gray-900 border border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 />
               </div>
